@@ -18,16 +18,45 @@ Replace this paragraph with your own summary of what your version does.
 ## How The System Works
 
 Explain your design in plain language.
+My recommender is content-based. It compares each song's attributes to what a user says they like, and doesn't use other users' behavior. It works in two steps: it scores every song, then ranks the scores to pick the top few.
 
 Some prompts to answer:
 
 - What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
+
+ I chose energy, mood and valence as the main features. Energy splits the 10-song catalog into calm songs and intense songs. Mood groups songs by feel across genres. Valence adds a second dimension that energy doesn't capture, such as telling a moody high-energy song from a happy one.
 - What information does your `UserProfile` store
+
+The profile holds the user's target values for the same features:
+
+target_energy, for example 0.40
+target_valence, for example 0.60
+target_acousticness, for example 0.80
+preferred_mood, for example "chill"
+preferred_genre, for example "lofi"
+It describes the song the user would love, and the recommender looks for songs close to it.
 - How does your `Recommender` compute a score for each song
+
+Each song gets a score from 0 to 1 as a weighted sum:
+
+Numeric features (energy, valence, acousticness) are rewarded for being close to the user's target, not for being high or low: closeness = 1 − |song value − target|. A user who wants calm songs (energy 0.4) therefore doesn't get "Gym Hero" (energy 0.93) just because it has more energy.
+Categorical features (mood, genre) score 1 if they match the user's preference and 0 if not.
 - How do you choose which songs to recommend
 
+A separate ranking step works on the whole list of scores:
+
+Score every song in the catalog against the user profile.
+Sort the songs from highest to lowest score.
+Break ties with a fixed rule, such as the better energy match first.
+Return the top k (for example, 5) songs, and optionally drop any below a minimum score.
+I keep scoring and ranking separate because scoring judges one song at a time, while choosing and ordering a shortlist needs all the scores together. This also means I can change one without breaking the other.
+
 You can include a simple diagram or bullet list if helpful.
+
+UserProfile ──┐
+              ├─► score each song ──► sort by score ──► top-k list
+songs.csv ────┘   (per song)          (whole list)      (recommendations)
+
 
 ---
 
